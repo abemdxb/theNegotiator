@@ -1,5 +1,7 @@
 """
-Builds an index for the Arize documentation using LangChain and Pinecone.
+Builds an index for locally stored pdfs using LangChain and Pinecone. 
+
+It involves a simple adaptation of Arize's own documentation here: https://github.com/Arize-ai/phoenix/blob/main/tutorials/build_arize_docs_index_langchain_pinecone.py
 
 To run, you must first create an account with Pinecone and create an index in the UI with the
 appropriate embedding dimension (1536 if you are using text-embedding-ada-002 like this script). You
@@ -21,6 +23,7 @@ import pinecone  # type: ignore
 import tiktoken
 from langchain.docstore.document import Document
 from langchain.document_loaders import GitbookLoader
+from langchain.document_loaders import PyPDFDirectoryLoader
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -28,15 +31,13 @@ from langchain.vectorstores import Pinecone
 from tiktoken import Encoding
 
 
-def load_gitbook_docs(docs_url: str) -> List[Document]:
+def load_pdf_docs(d_path: str) -> List[Document]:
     """
-    Loads documentation from a Gitbook URL.
+    Loads documentation from three pdf docs.
     """
 
-    loader = GitbookLoader(
-        docs_url,
-        load_all_paths=True,
-    )
+    loader = PyPDFDirectoryLoader("d_path")
+    
     return loader.load()
 
 
@@ -142,6 +143,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output-parquet-path", type=str, help="Path to output parquet file for index"
     )
+    parser.add_argument("--docs-path", type=str, help="Path to pdf files")
     args = parser.parse_args()
 
     pinecone_api_key = args.pinecone_api_key
@@ -149,13 +151,14 @@ if __name__ == "__main__":
     pinecone_environment = args.pinecone_environment
     openai_api_key = args.openai_api_key
     output_parquet_path = args.output_parquet_path
+    docs_path=args.docs_path
+    
 
     openai.api_key = openai_api_key
     pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
 
-    docs_url = "https://docs.arize.com/arize/"
     embedding_model_name = "text-embedding-ada-002"
-    documents = load_gitbook_docs(docs_url)
+    documents = load_pdf_docs(docs_path)
     documents = chunk_docs(documents, embedding_model_name=embedding_model_name)
     embeddings = OpenAIEmbeddingsWrapper(model=embedding_model_name)  # type: ignore
     build_pinecone_index(documents, embeddings, pinecone_index_name)
