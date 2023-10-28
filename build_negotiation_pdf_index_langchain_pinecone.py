@@ -161,7 +161,7 @@ if __name__ == "__main__":
 
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
-    print("documents = {}".format(documents)) 
+    print("documents = {}".format(documents)) #testing 
     documents = chunk_docs(documents, embedding_model_name=embedding_model_name)
     embeddings = OpenAIEmbeddingsWrapper(model=embedding_model_name)  # type: ignore
     build_pinecone_index(documents, embeddings, pinecone_index_name)
