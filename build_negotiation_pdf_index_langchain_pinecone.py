@@ -29,6 +29,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Pinecone
 from tiktoken import Encoding
+from typing_extensions import dataclass_transform
 
 
 def load_pdf_docs(d_path: str) -> List[Document]:
@@ -37,7 +38,8 @@ def load_pdf_docs(d_path: str) -> List[Document]:
     """
 
     loader = PyPDFDirectoryLoader("d_path")
-    
+
+    print("loader = {}".format(loader))
     return loader.load()
 
 
@@ -159,7 +161,7 @@ if __name__ == "__main__":
 
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
-    print(documents)
+    print("documents = {}".format(documents)))
     documents = chunk_docs(documents, embedding_model_name=embedding_model_name)
     embeddings = OpenAIEmbeddingsWrapper(model=embedding_model_name)  # type: ignore
     build_pinecone_index(documents, embeddings, pinecone_index_name)
