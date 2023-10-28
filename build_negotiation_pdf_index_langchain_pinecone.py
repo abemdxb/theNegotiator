@@ -37,7 +37,7 @@ def load_pdf_docs(d_path: str) -> List[Document]:
     Loads documentation from three pdf docs.
     """
 
-    loader = PyPDFDirectoryLoader("d_path")
+    loader = PyPDFDirectoryLoader(d_path)
 
     print("loader = {}".format(loader))
     return loader.load()
