@@ -27,6 +27,7 @@ from langchain.document_loaders import PyPDFDirectoryLoader
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import MarkdownTextSplitter
 from langchain.vectorstores import Pinecone
 from tiktoken import Encoding
 from typing_extensions import dataclass_transform
@@ -52,9 +53,9 @@ def tiktoken_len(text: str, tokenizer: Encoding) -> int:
     return len(tokens)
 
 
-def chunk_docs(documents: List[Document], embedding_model_name: str) -> List[Document]:
+def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type: str) -> List[Document]:
     """
-    Chunks the documents.
+    Chunks the documents by a specifief chunking strategy
 
     The chunking strategy used in this function is from the following notebook and accompanying
     video:
@@ -63,17 +64,22 @@ def chunk_docs(documents: List[Document], embedding_model_name: str) -> List[Doc
       xx-langchain-chunking.ipynb
     - https://www.youtube.com/watch?v=eqOfr4AGLk8
     """
-
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=400,
-        chunk_overlap=20,
-        length_function=partial(
-            tiktoken_len, tokenizer=tiktoken.encoding_for_model(embedding_model_name)
-        ),
-        separators=["\n\n", "\n", " ", ""],
-    )
-    return text_splitter.split_documents(documents)
-
+    if chunk_type = 'RecursiveCharacterTextSplitter'
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=400,
+            chunk_overlap=20,
+            length_function=partial(
+                tiktoken_len, tokenizer=tiktoken.encoding_for_model(embedding_model_name)
+            ),
+            separators=["\n\n", "\n", " ", ""],
+        )
+        return text_splitter.split_documents(documents)
+    elif chunk_type = 'MarkdownTextSplitter'
+        markdown_splitter = MarkDownTextSplitter(
+            chunk_size=400
+            chunk_overlap=20
+        )
+        return markdown_splitter.create_documents(documents)
 
 def build_pinecone_index(
     documents: List[Document], embeddings: Embeddings, index_name: str
@@ -146,6 +152,7 @@ if __name__ == "__main__":
         "--output-parquet-path", type=str, help="Path to output parquet file for index"
     )
     parser.add_argument("--docs-path", type=str, help="Path to pdf files")
+    parser.add_argument("--chunk-type", type=str, help="chunking_strategy")
     args = parser.parse_args()
 
     pinecone_api_key = args.pinecone_api_key
@@ -154,6 +161,7 @@ if __name__ == "__main__":
     openai_api_key = args.openai_api_key
     output_parquet_path = args.output_parquet_path
     docs_path=args.docs_path
+    chunk_type=args.chunk_type
     
 
     openai.api_key = openai_api_key
@@ -162,7 +170,7 @@ if __name__ == "__main__":
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
     print("documents = {}".format(documents)) #testing 
-    documents = chunk_docs(documents, embedding_model_name=embedding_model_name)
+    documents = chunk_docs(documents, embedding_model_name, chunk_type)
     embeddings = OpenAIEmbeddingsWrapper(model=embedding_model_name)  # type: ignore
     build_pinecone_index(documents, embeddings, pinecone_index_name)
     save_dataframe_to_parquet(embeddings.document_embedding_dataframe, output_parquet_path)
