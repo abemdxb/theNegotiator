@@ -67,7 +67,8 @@ def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type:
     - https://www.youtube.com/watch?v=eqOfr4AGLk8
 
     Since then we have added multiple chunk types that will be called using argparse, modified pinecone arguments to include specific subs
-    """
+    """ 
+    
     if chunk_type == 'RecursiveCharacterTextSplitter':
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=400,
