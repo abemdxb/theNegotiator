@@ -28,6 +28,8 @@ from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.text_splitter import MarkdownTextSplitter
+from langchain.text_splitter import SpacyTextSplitter
+from langchain.text_splitter import NLTKTextSplitter
 from langchain.vectorstores import Pinecone
 from tiktoken import Encoding
 from typing_extensions import dataclass_transform
@@ -66,7 +68,6 @@ def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type:
 
     Since then we have added multiple chunk types that will be called using argparse, modified pinecone arguments to include specific subs
     """
-    
     if chunk_type == 'RecursiveCharacterTextSplitter':
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=400,
@@ -77,12 +78,26 @@ def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type:
             separators=["\n\n", "\n", " ", ""],
         )
         return text_splitter.split_documents(documents)
+
     elif chunk_type == 'MarkdownTextSplitter':
         markdown_splitter = MarkdownTextSplitter(
             chunk_size=400,
             chunk_overlap=20
         )
-        return markdown_splitter.create_documents(documents)
+        return markdown_splitter.split_documents(documents)
+
+
+    elif chunk_type == 'NLTKTextSplitter':
+        NLTK_text_splitter = NLTKTextSplitter()
+        return NLTK_text_splitter.split_text(documents)
+
+    elif chunk_type == 'SpacyTextSplitter':
+        Spacy_text_splitter = SpacyTextSplitter()
+        return Spacy_text_splitter.split_documents(documents)
+
+    elif chunk_type == 'LatexTextSplitter':
+        latex_splitter = LatexTextSplitter(chunk_size=400, chunk_overlap=20)
+        return latex_splitter.split_documents(documents)        
 
 def build_pinecone_index(
     documents: List[Document], embeddings: Embeddings, index_name: str
