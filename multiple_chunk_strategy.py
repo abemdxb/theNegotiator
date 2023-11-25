@@ -66,7 +66,7 @@ def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type:
 
     Since then we have added multiple chunk types that will be called using argparse, modified pinecone arguments to include specific subs
     """
-    if chunk_type = 'RecursiveCharacterTextSplitter':
+    if chunk_type == 'RecursiveCharacterTextSplitter':
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=400,
             chunk_overlap=20,
@@ -76,7 +76,7 @@ def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type:
             separators=["\n\n", "\n", " ", ""],
         )
         return text_splitter.split_documents(documents)
-    elif chunk_type = 'MarkdownTextSplitter':
+    elif chunk_type == 'MarkdownTextSplitter':
         markdown_splitter = MarkdownTextSplitter(
             chunk_size=400
             chunk_overlap=20
