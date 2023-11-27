@@ -55,7 +55,7 @@ def tiktoken_len(text: str, tokenizer: Encoding) -> int:
     return len(tokens)
 
 
-def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type: str) -> List[Document]:
+def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type: str, chunk_size: int, chunk_overlap: int) -> List[Document]:
     """
     Chunks the documents by a specifief chunking strategy
 
@@ -71,8 +71,8 @@ def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type:
 
     if chunk_type == 'RecursiveCharacterTextSplitter':
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=400,
-            chunk_overlap=20,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
             length_function=partial(
                 tiktoken_len, tokenizer=tiktoken.encoding_for_model(embedding_model_name)
             ),
@@ -82,8 +82,8 @@ def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type:
 
     elif chunk_type == 'MarkdownTextSplitter':
         markdown_splitter = MarkdownTextSplitter(
-            chunk_size=400,
-            chunk_overlap=20,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
         )
         return markdown_splitter.split_documents(documents)
 
@@ -96,7 +96,7 @@ def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type:
         return Spacy_text_splitter.split_documents(documents)
 
     elif chunk_type == 'LatexTextSplitter':
-        latex_splitter = LatexTextSplitter(chunk_size=400, chunk_overlap=20)
+        latex_splitter = LatexTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         return latex_splitter.split_documents(documents)        
 
 def build_pinecone_index(
@@ -188,11 +188,20 @@ if __name__ == "__main__":
 
     openai.api_key = openai_api_key
     pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
-
+    p_index = pinecone.index(pinecone_index_name)
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
     print("documents = {}".format(documents)) #testing 
-    documents = chunk_docs(documents, embedding_model_name, chunk_type)
+    namespace=""
     embeddings = OpenAIEmbeddingsWrapper(model=embedding_model_name)  # type: ignore
-    build_pinecone_index(documents, embeddings, pinecone_index_name)
-    save_dataframe_to_parquet(embeddings.document_embedding_dataframe, output_parquet_path)
+    stat_dict= index.describe_index_stats() 
+    for ct in chunking_types:
+        for cs in chunking_sizes:
+            for co in chunking_overlaps:
+                namespace= f"{ct}_{cs}_{co}"
+                print(namespace)
+                if 'namespaces' in stat_dict and namespace in result_dict['namespaces']:
+                    index.delete(delete_all=True, namespace=namespace)                
+                documents = chunk_docs(documents, embedding_model_name, ct, cs, co)
+                build_pinecone_index(documents, embeddings, pinecone_index_name, namespace)
+                save_dataframe_to_parquet(embeddings.document_embedding_dataframe, output_parquet_path)
