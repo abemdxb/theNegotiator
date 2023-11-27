@@ -36,6 +36,7 @@ from langchain.text_splitter import LatexTextSplitter
 from langchain.vectorstores import Pinecone
 from tiktoken import Encoding
 from typing_extensions import dataclass_transform
+from tqdm import tqdm
 
 
 def load_pdf_docs(d_path: str) -> List[Document]:
@@ -247,13 +248,13 @@ if __name__ == "__main__":
     doc_iter= None
     i = 0
     
-    for ct in chunk_types:
+    for ct in tqdm(chunk_types):
         if ct == 'LatexTextSplitter' :
             print("Ignoring LatexTextSplitter as documents are pdfs")
             continue
         elif ct == "RecursiveCharacterTextSplitter":
-            for cs in chunk_sizes:
-                for co in chunk_overlaps:
+            for cs in tqdm(chunk_sizes):
+                for co in tqdm(chunk_overlaps):
                     namespace= f"{ct}_{cs}_{co}"
                     print(f"namespace {i}:{namespace}")
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
@@ -269,8 +270,8 @@ if __name__ == "__main__":
                     old_df = new_df
                     i+=1
         elif ct == "MarkdownTextSplitter":
-            for cs in chunk_sizes:
-                for co in chunk_overlaps:
+            for cs in tqdm(chunk_sizes):
+                for co in tqdm(chunk_overlaps):
                     namespace= f"{ct}_{cs}_{co}"
                     print(f"namespace {i}:{namespace}")
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
