@@ -185,7 +185,7 @@ class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--pinecone-api-key", type=str, help="Pinecone API key")
