@@ -109,12 +109,17 @@ def build_pinecone_index(
     Pinecone.from_documents(documents, embeddings, index_name, namespace)
 
 
-def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str) -> None:
+def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str, i: int) -> None:
     """
     Saves a dataframe to parquet.
     """
 
-    dataframe.to_parquet(save_path)
+    if i == 0 or not os.path.exists(output_parquet_path):
+        # On the first iteration or if the file doesn't exist, create a new parquet file
+        dataframe.to_parquet(output_parquet_path, mode='overwrite')
+    else:
+        # On subsequent iterations, append the data to the existing parquet file
+        dataframe.to_parquet(output_parquet_path, mode='append')
 
 
 class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
@@ -189,12 +194,14 @@ if __name__ == "__main__":
     openai.api_key = openai_api_key
     pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
     p_index = pinecone.index(pinecone_index_name)
+
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
     print("documents = {}".format(documents)) #testing 
     namespace=""
     embeddings = OpenAIEmbeddingsWrapper(model=embedding_model_name)  # type: ignore
     stat_dict= index.describe_index_stats() 
+    i = 0
     for ct in chunking_types:
         for cs in chunking_sizes:
             for co in chunking_overlaps:
@@ -202,6 +209,11 @@ if __name__ == "__main__":
                 print(namespace)
                 if 'namespaces' in stat_dict and namespace in result_dict['namespaces']:
                     index.delete(delete_all=True, namespace=namespace)                
-                documents = chunk_docs(documents, embedding_model_name, ct, cs, co)
+                documents = chunk_docs(documents, embedding_model_name, ct, cs, co) 
                 build_pinecone_index(documents, embeddings, pinecone_index_name, namespace)
-                save_dataframe_to_parquet(embeddings.document_embedding_dataframe, output_parquet_path)
+                original_df=embeddings.document_embedding_dataframe
+                original_df["namespace"] = namespace
+                save_dataframe_to_parquet(original_df, output_parquet_path,i)
+                i+=1
+    print("Total number of namespaces:",i)
+
