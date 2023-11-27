@@ -9,7 +9,7 @@ also need an OpenAI API key. This implementation relies on the fact that the Ari
 written and hosted with Gitbook. If your documentation does not use Gitbook, you should use a
 different document loader.
 """
-
+import os
 import argparse
 import logging
 import sys
@@ -32,6 +32,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.text_splitter import MarkdownTextSplitter
 from langchain.text_splitter import SpacyTextSplitter
 from langchain.text_splitter import NLTKTextSplitter
+from langchain.text_splitter import LatexTextSplitter
 from langchain.vectorstores import Pinecone
 from tiktoken import Encoding
 from typing_extensions import dataclass_transform
@@ -246,17 +247,17 @@ if __name__ == "__main__":
     doc_iter= None
     i = 0
     
-    for ct in chunking_types:
+    for ct in chunk_types:
         if ct == 'LatexTextSplitter' :
             print("Ignoring LatexTextSplitter as documents are pdfs")
             continue
         elif ct == "RecursiveCharacterTextSplitter":
-            for cs in chunking_sizes:
-                for co in chunking_overlaps:
+            for cs in chunk_sizes:
+                for co in chunk_overlaps:
                     namespace= f"{ct}_{cs}_{co}"
                     print(f"namespace {i}:{namespace}")
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
-                        index.delete(delete_all=True, namespace=namespace)                
+                        p_index.delete(delete_all=True, namespace=namespace)                
                     doc_iter = chunk_docs(documents, embedding_model_name, ct, cs, co) 
                     build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
                     new_df = embeddings.document_embedding_dataframe
@@ -268,12 +269,12 @@ if __name__ == "__main__":
                     old_df = new_df
                     i+=1
         elif ct == "MarkdownTextSplitter":
-            for cs in chunking_sizes:
-                for co in chunking_overlaps:
+            for cs in chunk_sizes:
+                for co in chunk_overlaps:
                     namespace= f"{ct}_{cs}_{co}"
                     print(f"namespace {i}:{namespace}")
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
-                        index.delete(delete_all=True, namespace=namespace)                
+                        p_index.delete(delete_all=True, namespace=namespace)                
                     doc_iter = chunk_docs(docs_md, embedding_model_name, ct, cs, co) 
                     build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
                     new_df = embeddings.document_embedding_dataframe
@@ -288,7 +289,7 @@ if __name__ == "__main__":
             namespace= f"{ct}"
             print(f"namespace {i}:{namespace}")
             if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
-                index.delete(delete_all=True, namespace=namespace)                
+                p_index.delete(delete_all=True, namespace=namespace)                
             doc_iter = chunk_docs(documents, embedding_model_name, ct) 
             build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
             new_df = embeddings.document_embedding_dataframe
