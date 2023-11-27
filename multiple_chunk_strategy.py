@@ -21,9 +21,11 @@ import openai
 import pandas as pd
 import pinecone  # type: ignore
 import tiktoken
+import aspose.words as aw
 from langchain.docstore.document import Document
 from langchain.document_loaders import GitbookLoader
 from langchain.document_loaders import PyPDFDirectoryLoader
+from langchain.document_loaders import DirectoryLoader
 from langchain.embeddings.base import Embeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -55,7 +57,7 @@ def tiktoken_len(text: str, tokenizer: Encoding) -> int:
     return len(tokens)
 
 
-def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type: str, chunk_size: int, chunk_overlap: int) -> List[Document]:
+def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type: str, chunk_size: int = 400, chunk_overlap: int = 20) -> List[Document]:
     """
     Chunks the documents by a specifief chunking strategy
 
@@ -111,7 +113,7 @@ def build_pinecone_index(
 
 def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str, i: int) -> None:
     """
-    Saves a dataframe to parquet.
+    Saves a dataframe to parquet - ensures as we loop through combinations of namespaces that the parquet is added to instead of overwritten.
     """
 
     if i == 0 or not os.path.exists(output_parquet_path):
@@ -121,6 +123,23 @@ def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str, i: int) -
         # On subsequent iterations, append the data to the existing parquet file
         dataframe.to_parquet(output_parquet_path, mode='append')
 
+# class ParquetSaver:
+#     @staticmethod
+#     def overwrite(dataframe: pd.DataFrame, save_path: str) -> None:
+#         """
+#         Saves a dataframe to parquet, overwriting the existing file if it exists.
+#         """
+#         dataframe.to_parquet(save_path, mode='overwrite')
+
+#     @staticmethod
+#     def append(dataframe: pd.DataFrame, save_path: str) -> None:
+#         """
+#         Appends a dataframe to an existing parquet file or creates a new file if it doesn't exist.
+#         """
+#         if not os.path.exists(save_path):
+#             dataframe.to_parquet(save_path, mode='overwrite')
+#         else:
+#             dataframe.to_parquet(save_path, mode='append')
 
 class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
     """
@@ -197,23 +216,88 @@ if __name__ == "__main__":
 
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
-    print("documents = {}".format(documents)) #testing 
-    namespace=""
+    
+    #markdown documents loading#------
+    input_directory = "test"
+    output_directory = "test_md"
+
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
+
+    for filename in os.listdir(input_directory):
+        if filename.endswith(".pdf"):
+            input_path = os.path.join(input_directory, filename)
+            
+            doc = aw.Document(input_path)
+            
+            output_filename = os.path.splitext(filename)[0] + ".md"
+            output_path = os.path.join(output_directory, output_filename)
+            
+            doc.save(output_path)
+
+    loader = DirectoryLoader('test_md/', glob="**/*.md")
+    docs_md = loader.load()
+    #---------------
+    
+    
     embeddings = OpenAIEmbeddingsWrapper(model=embedding_model_name)  # type: ignore
-    stat_dict= index.describe_index_stats() 
+    stat_dict= p_index.describe_index_stats() 
+    namespace=""
+    doc_iter= None
     i = 0
+    
     for ct in chunking_types:
-        for cs in chunking_sizes:
-            for co in chunking_overlaps:
-                namespace= f"{ct}_{cs}_{co}"
-                print(namespace)
-                if 'namespaces' in stat_dict and namespace in result_dict['namespaces']:
-                    index.delete(delete_all=True, namespace=namespace)                
-                documents = chunk_docs(documents, embedding_model_name, ct, cs, co) 
-                build_pinecone_index(documents, embeddings, pinecone_index_name, namespace)
-                original_df=embeddings.document_embedding_dataframe
-                original_df["namespace"] = namespace
-                save_dataframe_to_parquet(original_df, output_parquet_path,i)
-                i+=1
+        if ct == 'LatexTextSplitter' :
+            print("Ignoring LatexTextSplitter as documents are pdfs")
+            continue
+        elif ct == "RecursiveCharacterTextSplitter":
+            for cs in chunking_sizes:
+                for co in chunking_overlaps:
+                    namespace= f"{ct}_{cs}_{co}"
+                    print(namespace)
+                    if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
+                        index.delete(delete_all=True, namespace=namespace)                
+                    doc_iter = chunk_docs(documents, embedding_model_name, ct, cs, co) 
+                    build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
+                    new_df = embeddings.document_embedding_dataframe
+                    if i == 0:
+                        old_df = pd.DataFrame(columns=new_df.columns)
+                    diff_df = new_df.merge(old_df, on=list(new_df.columns), how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
+                    diff_df["namespace"] = namespace
+                    save_dataframe_to_parquet(diff_df, output_parquet_path,i)   # can I move the choice of what to do with I here to keep things clean?
+                    old_df = new_df
+                    i+=1
+        elif ct == "MarkdownTextSplitter":
+            for cs in chunking_sizes:
+                for co in chunking_overlaps:
+                    namespace= f"{ct}_{cs}_{co}"
+                    print(namespace)
+                    if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
+                        index.delete(delete_all=True, namespace=namespace)                
+                    doc_iter = chunk_docs(docs_md, embedding_model_name, ct, cs, co) 
+                    build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
+                    new_df = embeddings.document_embedding_dataframe
+                    if i == 0:
+                        old_df = pd.DataFrame(columns=new_df.columns)
+                    diff_df = new_df.merge(old_df, on=list(new_df.columns), how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
+                    diff_df["namespace"] = namespace
+                    save_dataframe_to_parquet(diff_df, output_parquet_path,i)   # can I move the choice of what to do with I here to keep things clean?
+                    old_df = new_df
+                    i+=1
+        else:
+            namespace= f"{ct}"
+            print(namespace)
+            if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
+                index.delete(delete_all=True, namespace=namespace)                
+            doc_iter = chunk_docs(documents, embedding_model_name, ct) 
+            build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
+            new_df = embeddings.document_embedding_dataframe
+            if i == 0:
+                old_df = pd.DataFrame(columns=new_df.columns)
+            diff_df = new_df.merge(old_df, on=list(new_df.columns), how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
+            diff_df["namespace"] = namespace
+            save_dataframe_to_parquet(diff_df, output_parquet_path,i)   # can I move the choice of what to do with I here to keep things clean?
+            old_df = new_df
+            i+=1        
     print("Total number of namespaces:",i)
 
