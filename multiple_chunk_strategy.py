@@ -196,9 +196,9 @@ if __name__ == "__main__":
         "--output-parquet-path", type=str, help="Path to output parquet file for index"
     )
     parser.add_argument("--docs-path", type=str, help="Path to pdf files")
-    parser.add_argument("--chunk-types", type=json.loads, help="chunking_strategy") #json loads
-    parser.add_argument("--chunk-sizes", type=json.loads, help="chunk_sizes") #json loads
-    parser.add_argument("--chunk-overlaps", type=json.loads, help="chunking_overlap") #json loads
+    parser.add_argument("--chunk-types", type=str, help="chunking_strategy") #json loads
+    parser.add_argument("--chunk-sizes", type=str, help="chunk_sizes") #json loads
+    parser.add_argument("--chunk-overlaps", type=str, help="chunking_overlap") #json loads
     args = parser.parse_args()
 
     pinecone_api_key = args.pinecone_api_key
@@ -207,11 +207,15 @@ if __name__ == "__main__":
     openai_api_key = args.openai_api_key
     output_parquet_path = args.output_parquet_path
     docs_path=args.docs_path
-    chunk_types=args.chunk_types
-    chunk_sizes=args.chunk_sizes
-    chunk_overlaps=args.chunk_overlaps
+    chunk_types_text=args.chunk_types
+    chunk_sizes_text=args.chunk_sizes
+    chunk_overlaps_text=args.chunk_overlaps
     
-
+    print(chunk_types_text)
+    print(chunk_sizes_text)
+    print(chunk_overlaps_text)
+    exit()
+    
     openai.api_key = openai_api_key
     pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
     p_index = pinecone.index(pinecone_index_name)
