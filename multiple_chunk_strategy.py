@@ -254,7 +254,7 @@ if __name__ == "__main__":
             for cs in chunking_sizes:
                 for co in chunking_overlaps:
                     namespace= f"{ct}_{cs}_{co}"
-                    print(namespace)
+                    print(f"namespace {i}:{namespace}")
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
                         index.delete(delete_all=True, namespace=namespace)                
                     doc_iter = chunk_docs(documents, embedding_model_name, ct, cs, co) 
@@ -271,7 +271,7 @@ if __name__ == "__main__":
             for cs in chunking_sizes:
                 for co in chunking_overlaps:
                     namespace= f"{ct}_{cs}_{co}"
-                    print(namespace)
+                    print(f"namespace {i}:{namespace}")
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
                         index.delete(delete_all=True, namespace=namespace)                
                     doc_iter = chunk_docs(docs_md, embedding_model_name, ct, cs, co) 
@@ -286,7 +286,7 @@ if __name__ == "__main__":
                     i+=1
         else:
             namespace= f"{ct}"
-            print(namespace)
+            print(f"namespace {i}:{namespace}")
             if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
                 index.delete(delete_all=True, namespace=namespace)                
             doc_iter = chunk_docs(documents, embedding_model_name, ct) 
