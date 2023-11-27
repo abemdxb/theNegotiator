@@ -15,7 +15,7 @@ import logging
 import sys
 from functools import partial
 from typing import Dict, List, Optional
-
+import json
 import numpy as np
 import openai
 import pandas as pd
@@ -23,7 +23,7 @@ import pinecone  # type: ignore
 import tiktoken
 import aspose.words as aw
 from langchain.docstore.document import Document
-from langchain.document_loaders import GitbookLoader
+#from langchain.document_loaders import GitbookLoader
 from langchain.document_loaders import PyPDFDirectoryLoader
 from langchain.document_loaders import DirectoryLoader
 from langchain.embeddings.base import Embeddings
@@ -195,9 +195,9 @@ if __name__ == "__main__":
         "--output-parquet-path", type=str, help="Path to output parquet file for index"
     )
     parser.add_argument("--docs-path", type=str, help="Path to pdf files")
-    parser.add_argument("--chunk-types", type=str, help="chunking_strategy")
-    parser.add_argument("--chunk-sizes", type=str, help="chunk_sizes")
-    parser.add_argument("--chunk-overlaps", type=str, help="chunking_overlap")
+    parser.add_argument("--chunk-types", type=json.loads, help="chunking_strategy") #json loads
+    parser.add_argument("--chunk-sizes", type=json.loads, help="chunk_sizes") #json loads
+    parser.add_argument("--chunk-overlaps", type=json.loads, help="chunking_overlap") #json loads
     args = parser.parse_args()
 
     pinecone_api_key = args.pinecone_api_key
