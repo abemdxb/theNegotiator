@@ -100,13 +100,13 @@ def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type:
         return latex_splitter.split_documents(documents)        
 
 def build_pinecone_index(
-    documents: List[Document], embeddings: Embeddings, index_name: str
+    documents: List[Document], embeddings: Embeddings, index_name: str, name_space: str
 ) -> None:
     """
     Builds a Pinecone index from a list of documents.
     """
 
-    Pinecone.from_documents(documents, embeddings, index_name=pinecone_index_name)
+    Pinecone.from_documents(documents, embeddings, index_name, namespace)
 
 
 def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str) -> None:
