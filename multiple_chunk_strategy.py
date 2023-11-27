@@ -211,16 +211,14 @@ if __name__ == "__main__":
     chunk_sizes_text=args.chunk_sizes
     chunk_overlaps_text=args.chunk_overlaps
 
-    print(chunk_types_text)
-    print(chunk_sizes_text)
-    print(chunk_overlaps_text)
+    # print(chunk_types_text)
+    # print(chunk_sizes_text)
+    # print(chunk_overlaps_text)
 
     chunk_types = json.loads(chunk_types_text)
     chunk_sizes = json.loads(chunk_sizes_text)
     chunk_overlaps = json.loads(chunk_overlaps_text)
     
-
-    exit()
 
     openai.api_key = openai_api_key
     pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
