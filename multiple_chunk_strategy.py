@@ -83,7 +83,7 @@ def chunk_docs(documents: List[Document], embedding_model_name: str, chunk_type:
     elif chunk_type == 'MarkdownTextSplitter':
         markdown_splitter = MarkdownTextSplitter(
             ch unk_size=400,
-            chunk_overlap=20
+            chunk_overlap=20,
         )
         return markdown_splitter.split_documents(documents)
     
