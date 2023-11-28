@@ -264,7 +264,7 @@ if __name__ == "__main__":
                     #chunk the documents into a list of documents
                     doc_iter = chunk_docs(documents, embedding_model_name, ct, cs, co) 
                     print("doc_iter done")
-                    print("doc_iter items:",doc_iter[0], doc_iter[1])
+                    print("doc_iter items:",f"item1::::: {doc_iter[0]}", f"item2:::::{doc_iter[1]}")
                     
                     
                     #Build the pinecone index with the document embeddings dict 
@@ -273,7 +273,7 @@ if __name__ == "__main__":
 
                     #Create df with items for full pull.
                     new_df = embeddings.document_embedding_dataframe
-                    new_df.head()
+                    print(new_df.head())
                     if i == 0:
                         old_df = pd.DataFrame(columns=new_df.columns)
                     diff_df = new_df.merge(old_df, on=list(new_df.columns), how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
