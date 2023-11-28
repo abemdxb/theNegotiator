@@ -269,9 +269,11 @@ if __name__ == "__main__":
                     
                     #Build the pinecone index with the document embeddings dict 
                     build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
-                    
+                    print("pinecone build done")
+
                     #Create df with items for full pull.
                     new_df = embeddings.document_embedding_dataframe
+                    new_df.head()
                     if i == 0:
                         old_df = pd.DataFrame(columns=new_df.columns)
                     diff_df = new_df.merge(old_df, on=list(new_df.columns), how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
