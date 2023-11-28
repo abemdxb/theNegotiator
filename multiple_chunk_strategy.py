@@ -116,31 +116,14 @@ def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str, i: int) -
     """
     Saves a dataframe to parquet - ensures as we loop through combinations of namespaces that the parquet is added to instead of overwritten.
     """
+    dataframe.to_parquet(save_path)
+    # if i == 0 or not os.path.exists(save_path):
+    #     # On the first iteration or if the file doesn't exist, create a new parquet file
+    #     dataframe.to_parquet(save_path, engine='fastparquet')
+    # else:
+    #     # On subsequent iterations, append the data to the existing parquet file
+    #     dataframe.to_parquet(save_path, engine='fastparquet', append=True)
 
-    if i == 0 or not os.path.exists(save_path):
-        # On the first iteration or if the file doesn't exist, create a new parquet file
-        dataframe.to_parquet(save_path, engine='fastparquet')
-    else:
-        # On subsequent iterations, append the data to the existing parquet file
-        dataframe.to_parquet(save_path, engine='fastparquet', append=True)
-
-# class ParquetSaver:
-#     @staticmethod
-#     def overwrite(dataframe: pd.DataFrame, save_path: str) -> None:
-#         """
-#         Saves a dataframe to parquet, overwriting the existing file if it exists.
-#         """
-#         dataframe.to_parquet(save_path, mode='overwrite')
-
-#     @staticmethod
-#     def append(dataframe: pd.DataFrame, save_path: str) -> None:
-#         """
-#         Appends a dataframe to an existing parquet file or creates a new file if it doesn't exist.
-#         """
-#         if not os.path.exists(save_path):
-#             dataframe.to_parquet(save_path, mode='overwrite')
-#         else:
-#             dataframe.to_parquet(save_path, mode='append')
 
 class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
     """
@@ -210,10 +193,6 @@ if __name__ == "__main__":
     chunk_sizes_text=args.chunk_sizes
     chunk_overlaps_text=args.chunk_overlaps
 
-    # print(chunk_types_text)
-    # print(chunk_sizes_text)
-    # print(chunk_overlaps_text)
-
     chunk_types = json.loads(chunk_types_text)
     chunk_sizes = json.loads(chunk_sizes_text)
     chunk_overlaps = json.loads(chunk_overlaps_text)
@@ -259,7 +238,8 @@ if __name__ == "__main__":
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
                         print(f"delete occured for {namespace}")
                         p_index.delete(delete_all=True, namespace=namespace)                
-                    print(f"NO delete occured for {namespace}")
+                    else:
+                        print(f"NO delete occured for {namespace}")
                     
                     #chunk the documents into a list of documents
                     doc_iter = chunk_docs(documents, embedding_model_name, ct, cs, co) 
@@ -274,44 +254,48 @@ if __name__ == "__main__":
                     #Create df with items for full pull.
                     new_df = embeddings.document_embedding_dataframe
                     print(new_df.head())
+                    print(new_df.describe())
                     if i == 0:
                         old_df = pd.DataFrame(columns=new_df.columns)
                     diff_df = new_df.merge(old_df, on=list(new_df.columns), how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
                     diff_df["namespace"] = namespace
-                    save_dataframe_to_parquet(diff_df, output_parquet_path,i)   # can I move the choice of what to do with I here to keep things clean?
+                    print(diff_df.head())
+                    print(diff_df.describe())
+                    final_path=output_parquet_path+namespace+".pq"
+                    save_dataframe_to_parquet(diff_df, final_path,i)   # can I move the choice of what to do with I here to keep things clean?
                     old_df = new_df
                     i+=1
-        elif ct == "MarkdownTextSplitter":
-            for cs in chunk_sizes:
-                for co in chunk_overlaps:
-                    namespace= f"{ct}_{cs}_{co}"
-                    print(f"namespace {i}:{namespace}")
-                    if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
-                        p_index.delete(delete_all=True, namespace=namespace)                
-                    doc_iter = chunk_docs(docs_md, embedding_model_name, ct, cs, co) 
-                    build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
-                    new_df = embeddings.document_embedding_dataframe
-                    if i == 0:
-                        old_df = pd.DataFrame(columns=new_df.columns)
-                    diff_df = new_df.merge(old_df, on=list(new_df.columns), how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
-                    diff_df["namespace"] = namespace
-                    save_dataframe_to_parquet(diff_df, output_parquet_path,i)   # can I move the choice of what to do with I here to keep things clean?
-                    old_df = new_df
-                    i+=1
-        else:
-            namespace= f"{ct}"
-            print(f"namespace {i}:{namespace}")
-            if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
-                p_index.delete(delete_all=True, namespace=namespace)                
-            doc_iter = chunk_docs(documents, embedding_model_name, ct) 
-            build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
-            new_df = embeddings.document_embedding_dataframe
-            if i == 0:
-                old_df = pd.DataFrame(columns=new_df.columns)
-            diff_df = new_df.merge(old_df, on=list(new_df.columns), how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
-            diff_df["namespace"] = namespace
-            save_dataframe_to_parquet(diff_df, output_parquet_path,i)   # can I move the choice of what to do with I here to keep things clean?
-            old_df = new_df
-            i+=1        
+        # elif ct == "MarkdownTextSplitter":
+        #     for cs in chunk_sizes:
+        #         for co in chunk_overlaps:
+        #             namespace= f"{ct}_{cs}_{co}"
+        #             print(f"namespace {i}:{namespace}")
+        #             if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
+        #                 p_index.delete(delete_all=True, namespace=namespace)                
+        #             doc_iter = chunk_docs(docs_md, embedding_model_name, ct, cs, co) 
+        #             build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
+        #             new_df = embeddings.document_embedding_dataframe
+        #             if i == 0:
+        #                 old_df = pd.DataFrame(columns=new_df.columns)
+        #             diff_df = new_df.merge(old_df, on=list(new_df.columns), how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
+        #             diff_df["namespace"] = namespace
+        #             save_dataframe_to_parquet(diff_df, output_parquet_path,i)   # can I move the choice of what to do with I here to keep things clean?
+        #             old_df = new_df
+        #             i+=1
+        # else:
+        #     namespace= f"{ct}"
+        #     print(f"namespace {i}:{namespace}")
+        #     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
+        #         p_index.delete(delete_all=True, namespace=namespace)                
+        #     doc_iter = chunk_docs(documents, embedding_model_name, ct) 
+        #     build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
+        #     new_df = embeddings.document_embedding_dataframe
+        #     if i == 0:
+        #         old_df = pd.DataFrame(columns=new_df.columns)
+        #     diff_df = new_df.merge(old_df, on=list(new_df.columns), how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
+        #     diff_df["namespace"] = namespace
+        #     save_dataframe_to_parquet(diff_df, output_parquet_path,i)   # can I move the choice of what to do with I here to keep things clean?
+        #     old_df = new_df
+        #     i+=1        
     print("Total number of namespaces:",i)
 
