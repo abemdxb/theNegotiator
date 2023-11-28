@@ -222,7 +222,7 @@ if __name__ == "__main__":
 
     openai.api_key = openai_api_key
     pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
-    p_index = pinecone.index(pinecone_index_name)
+    p_index = pinecone.Index(pinecone_index_name)
 
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
