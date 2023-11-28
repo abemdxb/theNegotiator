@@ -223,17 +223,17 @@ if __name__ == "__main__":
     openai.api_key = openai_api_key
     pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
     p_index = pinecone.Index(pinecone_index_name)
-
+    print("line 226 check")
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
-    
+    print("line 229 check")
     #markdown documents loading#------
     input_directory = "test"
     output_directory = "test_md"
 
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
-
+    print("line 236 check")
     for filename in os.listdir(input_directory):
         if filename.endswith(".pdf"):
             input_path = os.path.join(input_directory, filename)
