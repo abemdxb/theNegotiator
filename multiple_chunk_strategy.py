@@ -240,6 +240,8 @@ if __name__ == "__main__":
     namespace=""
     doc_iter= None
     i = 0
+
+    print("line244")
     
     for ct in tqdm(chunk_types):
         if ct == 'LatexTextSplitter' :
