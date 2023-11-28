@@ -21,7 +21,6 @@ import openai
 import pandas as pd
 import pinecone  # type: ignore
 import tiktoken
-import aspose.words as aw
 from langchain.docstore.document import Document
 #from langchain.document_loaders import GitbookLoader
 from langchain.document_loaders import PyPDFDirectoryLoader
@@ -223,34 +222,20 @@ if __name__ == "__main__":
     openai.api_key = openai_api_key
     pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
     p_index = pinecone.Index(pinecone_index_name)
-    print("line 226 check")
+    print("line 225 check")
+    
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
-    print("line 229 check")
-    #markdown documents loading#------
-    input_directory = "test"
-    output_directory = "test_md"
-
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
-
-    for filename in os.listdir(input_directory):
-        if filename.endswith(".pdf"):
-            input_path = os.path.join(input_directory, filename)
-            print("239 check")
-            doc = aw.Document(input_path)
-            
-            output_filename = os.path.splitext(filename)[0] + ".md"
-            output_path = os.path.join(output_directory, output_filename)
-            
-            doc.save(output_path)
-    print("247 check")
-    loader = DirectoryLoader('test_md/', glob="**/*.md")
+    print("line 228 check")
+    
+    loader = DirectoryLoader('theNegotiator/test/', glob="**/*.md")
     docs_md = loader.load()
-    #---------------
+    print("line 232")
     
     
     embeddings = OpenAIEmbeddingsWrapper(model=embedding_model_name)  # type: ignore
+    print("line237")
+
     stat_dict= p_index.describe_index_stats() 
     namespace=""
     doc_iter= None
