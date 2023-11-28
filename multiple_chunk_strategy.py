@@ -220,7 +220,8 @@ if __name__ == "__main__":
     namespace=""
     doc_iter= None
     i = 0
-
+    old_df=None
+    new_df=None
     print("line244")
     
     for ct in chunk_types:
@@ -251,19 +252,33 @@ if __name__ == "__main__":
                     build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
                     print("pinecone build done")
 
-                    #Create df with items for full pull.
+                    #Create df from embeddings
                     new_df = embeddings.document_embedding_dataframe
                     print(new_df.head())
                     print(new_df.describe())
+
+                    #Create a diff_df that pulls only new rows from embeddings- not sure if build-index overwrites or not- not a opensource class
                     if i == 0:
                         old_df = pd.DataFrame(columns=new_df.columns)
-                    diff_df = new_df.merge(old_df, on=list(new_df.columns), how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
+                    
+                    #Print out if new_df is an extension- for testing only
+                    is_extension = all(new_df[col].isin(old_df[col].unique()).all() for col in old_df.columns)
+                    if is_extension:
+                        print("new_df is an extension of old_df.")
+                    else:
+                        print("new_df is not an extension of old_df.")
+                    
+                    first_column=new_df.columns[0]
+                    diff_df = new_df.merge(old_df, on=first_column, how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
                     diff_df["namespace"] = namespace
                     print(diff_df.head())
                     print(diff_df.describe())
-                    final_path=output_parquet_path+namespace+".pq"
-                    save_dataframe_to_parquet(diff_df, final_path,i)   # can I move the choice of what to do with I here to keep things clean?
+                    
+                    #Save to parquet file in colab and make old df = new df for next iteration - we will pull things together into one file in the colab and push to gdrive there as well.
+                    final_path = output_parquet_path+namespace+".pq"
+                    save_dataframe_to_parquet(diff_df, final_path,i)  
                     old_df = new_df
+
                     i+=1
         # elif ct == "MarkdownTextSplitter":
         #     for cs in chunk_sizes:
