@@ -117,12 +117,12 @@ def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str, i: int) -
     Saves a dataframe to parquet - ensures as we loop through combinations of namespaces that the parquet is added to instead of overwritten.
     """
 
-    if i == 0 or not os.path.exists(output_parquet_path):
+    if i == 0 or not os.path.exists(save_path):
         # On the first iteration or if the file doesn't exist, create a new parquet file
-        dataframe.to_parquet(output_parquet_path, mode='overwrite')
+        dataframe.to_parquet(save_path, mode='overwrite')
     else:
         # On subsequent iterations, append the data to the existing parquet file
-        dataframe.to_parquet(output_parquet_path, mode='append')
+        dataframe.to_parquet(save_path, mode='append')
 
 # class ParquetSaver:
 #     @staticmethod
