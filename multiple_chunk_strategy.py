@@ -233,11 +233,11 @@ if __name__ == "__main__":
 
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
-    print("line 236 check")
+        
     for filename in os.listdir(input_directory):
         if filename.endswith(".pdf"):
             input_path = os.path.join(input_directory, filename)
-            
+            print("239 check")
             doc = aw.Document(input_path)
             
             output_filename = os.path.splitext(filename)[0] + ".md"
