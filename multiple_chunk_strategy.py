@@ -233,7 +233,7 @@ if __name__ == "__main__":
 
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
-        
+
     for filename in os.listdir(input_directory):
         if filename.endswith(".pdf"):
             input_path = os.path.join(input_directory, filename)
@@ -244,7 +244,7 @@ if __name__ == "__main__":
             output_path = os.path.join(output_directory, output_filename)
             
             doc.save(output_path)
-
+    print("247 check")
     loader = DirectoryLoader('test_md/', glob="**/*.md")
     docs_md = loader.load()
     #---------------
