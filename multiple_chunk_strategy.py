@@ -109,7 +109,7 @@ def build_pinecone_index(
     Builds a Pinecone index from a list of documents.
     """
 
-    Pinecone.from_documents(documents, embeddings, index_name, namespace)
+    Pinecone.from_documents(documents, embeddings, index_name=index_name, namespace=namespace)
 
 
 def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str, i: int) -> None:
@@ -237,6 +237,7 @@ if __name__ == "__main__":
     print("line237")
 
     stat_dict= p_index.describe_index_stats() 
+    print(stat_dict)
     namespace=""
     doc_iter= None
     i = 0
@@ -250,12 +251,26 @@ if __name__ == "__main__":
         elif ct == "RecursiveCharacterTextSplitter":
             for cs in chunk_sizes:
                 for co in chunk_overlaps:
+                    #label namespace
                     namespace= f"{ct}_{cs}_{co}"
                     print(f"namespace {i}:{namespace}")
+                    
+                    #delete namespace if it already exists
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
+                        print(f"delete occured for {namespace}")
                         p_index.delete(delete_all=True, namespace=namespace)                
+                    print(f"NO delete occured for {namespace}")
+                    
+                    #chunk the documents into a list of documents
                     doc_iter = chunk_docs(documents, embedding_model_name, ct, cs, co) 
+                    print("doc_iter done")
+                    print("doc_iter items:",doc_iter[0], doc_iter[1])
+                    
+                    
+                    #Build the pinecone index with the document embeddings dict 
                     build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
+                    
+                    #Create df with items for full pull.
                     new_df = embeddings.document_embedding_dataframe
                     if i == 0:
                         old_df = pd.DataFrame(columns=new_df.columns)
