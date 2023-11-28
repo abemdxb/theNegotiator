@@ -119,10 +119,10 @@ def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str, i: int) -
 
     if i == 0 or not os.path.exists(save_path):
         # On the first iteration or if the file doesn't exist, create a new parquet file
-        dataframe.to_parquet(save_path, mode='overwrite')
+        dataframe.to_parquet(save_path, engine='fastparquet')
     else:
         # On subsequent iterations, append the data to the existing parquet file
-        dataframe.to_parquet(save_path, mode='append')
+        dataframe.to_parquet(save_path, engine='fastparquet', append=True)
 
 # class ParquetSaver:
 #     @staticmethod
