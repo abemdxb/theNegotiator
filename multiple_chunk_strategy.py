@@ -243,13 +243,13 @@ if __name__ == "__main__":
 
     print("line244")
     
-    for ct in tqdm(chunk_types):
+    for ct in chunk_types:
         if ct == 'LatexTextSplitter' :
             print("Ignoring LatexTextSplitter as documents are pdfs")
             continue
         elif ct == "RecursiveCharacterTextSplitter":
-            for cs in tqdm(chunk_sizes):
-                for co in tqdm(chunk_overlaps):
+            for cs in chunk_sizes:
+                for co in chunk_overlaps:
                     namespace= f"{ct}_{cs}_{co}"
                     print(f"namespace {i}:{namespace}")
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
@@ -265,8 +265,8 @@ if __name__ == "__main__":
                     old_df = new_df
                     i+=1
         elif ct == "MarkdownTextSplitter":
-            for cs in tqdm(chunk_sizes):
-                for co in tqdm(chunk_overlaps):
+            for cs in chunk_sizes:
+                for co in chunk_overlaps:
                     namespace= f"{ct}_{cs}_{co}"
                     print(f"namespace {i}:{namespace}")
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
