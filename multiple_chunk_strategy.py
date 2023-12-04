@@ -21,6 +21,7 @@ import openai
 import pandas as pd
 import pinecone  # type: ignore
 import tiktoken
+import pyarrow.parquet as pq
 from langchain.docstore.document import Document
 #from langchain.document_loaders import GitbookLoader
 from langchain.document_loaders import PyPDFDirectoryLoader
@@ -117,12 +118,29 @@ def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str, i: int) -
     Saves a dataframe to parquet - ensures as we loop through combinations of namespaces that the parquet is added to instead of overwritten.
     """
     dataframe.to_parquet(save_path)
+
     # if i == 0 or not os.path.exists(save_path):
     #     # On the first iteration or if the file doesn't exist, create a new parquet file
     #     dataframe.to_parquet(save_path, engine='fastparquet')
     # else:
     #     # On subsequent iterations, append the data to the existing parquet file
     #     dataframe.to_parquet(save_path, engine='fastparquet', append=True)
+
+
+def combine_parquet(out_path: str) -> None:
+    """
+    Combines all parquet files in folder specified. Includes tests for identical columns
+    """
+    parq_files= [f for f in os.listdir(out_path) if f.endswith('.pq')]
+
+    combined_df=pd.DataFrame()
+
+    for file in parq_files:
+        file_path=os.path.join(out_path,file)
+        df=pd.read_parquet(file_path)
+        combined_df=combined_df.append(df,ignore_index=True)
+
+    combined_df.to_parquet(out_path+"knowledge_db.pq")
 
 
 class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
@@ -201,28 +219,24 @@ if __name__ == "__main__":
     openai.api_key = openai_api_key
     pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
     p_index = pinecone.Index(pinecone_index_name)
-    print("line 225 check")
     
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
-    print("line 228 check")
     
-    loader = DirectoryLoader('theNegotiator/test/', glob="**/*.md")
+
+    # lots of errors coming from here
+    loader = DirectoryLoader(docs_path, glob="**/*.md")   
     docs_md = loader.load()
-    print("line 232")
     
     
     embeddings = OpenAIEmbeddingsWrapper(model=embedding_model_name)  # type: ignore
-    print("line237")
 
     stat_dict= p_index.describe_index_stats() 
-    print(stat_dict)
     namespace=""
     doc_iter= None
     i = 0
     old_df=None
     new_df=None
-    print("line244")
     
     for ct in chunk_types:
         if ct == 'LatexTextSplitter' :
@@ -231,9 +245,9 @@ if __name__ == "__main__":
         elif ct == "RecursiveCharacterTextSplitter":
             for cs in chunk_sizes:
                 for co in chunk_overlaps:
-                    #label namespace
+                    #create namespace label
                     namespace= f"{ct}_{cs}_{co}"
-                    print(f"namespace {i}:{namespace}")
+                    print(f"chunking for namespace {i}:{namespace}")
                     
                     #delete namespace if it already exists
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
@@ -244,41 +258,36 @@ if __name__ == "__main__":
                     
                     #chunk the documents into a list of documents
                     doc_iter = chunk_docs(documents, embedding_model_name, ct, cs, co) 
-                    print("doc_iter done")
-                    print("doc_iter items:",f"item1::::: {doc_iter[0]}", f"item2:::::{doc_iter[1]}")
-                    
-                    
+                    # print("chunking done")
+                                        
                     #Build the pinecone index with the document embeddings dict 
                     build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
-                    print("pinecone build done")
+                    # print("pinecone build done")
 
                     #Create df from embeddings
                     new_df = embeddings.document_embedding_dataframe
-                    print(new_df.head())
-                    print(new_df.describe())
 
                     #Create a diff_df that pulls only new rows from embeddings- not sure if build-index overwrites or not- not a opensource class
                     if i == 0:
                         old_df = pd.DataFrame(columns=new_df.columns)
                     
                     #Print out if new_df is an extension- for testing only
-                    is_extension = all(new_df[col].isin(old_df[col].unique()).all() for col in old_df.columns)
-                    if is_extension:
-                        print("new_df is an extension of old_df.")
-                    else:
-                        print("new_df is not an extension of old_df.")
+                    # is_extension = all(new_df[col].isin(old_df[col].unique()).all() for col in old_df.columns)
+                    # if is_extension:
+                    #     print("new_df is an extension of old_df.")
+                    # else:
+                    #     print("new_df is not an extension of old_df.")
                     
                     first_column=new_df.columns[0]
                     diff_df = new_df.merge(old_df, on=first_column, how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
                     diff_df["namespace"] = namespace
-                    print(diff_df.head())
-                    print(diff_df.describe())
+                    # print(diff_df.head())
+                    # print(diff_df.describe())
                     
                     #Save to parquet file in colab and make old df = new df for next iteration - we will pull things together into one file in the colab and push to gdrive there as well.
                     final_path = output_parquet_path+namespace+".pq"
                     save_dataframe_to_parquet(diff_df, final_path,i)  
                     old_df = new_df
-
                     i+=1
         # elif ct == "MarkdownTextSplitter":
         #     for cs in chunk_sizes:
