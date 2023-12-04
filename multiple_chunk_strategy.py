@@ -225,7 +225,7 @@ if __name__ == "__main__":
     
 
     # lots of errors coming from here
-    loader = DirectoryLoader(docs_path, glob="**/*.md")   
+    loader = DirectoryLoader(docs_path, glob="*.md")   
     docs_md = loader.load()
     
     
