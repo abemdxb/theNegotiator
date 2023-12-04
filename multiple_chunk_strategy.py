@@ -322,4 +322,6 @@ if __name__ == "__main__":
         #     old_df = new_df
         #     i+=1        
     print("Total number of namespaces:",i)
+    combine_parquet(output_parquet_path)
+    print("knowledge_db.pq created")
 
