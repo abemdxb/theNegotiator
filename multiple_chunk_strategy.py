@@ -225,8 +225,8 @@ if __name__ == "__main__":
     
 
     # lots of errors coming from here
-    loader = DirectoryLoader(docs_path, loader_kwargs={"glob":"**/*.md"})   
-    docs_md = loader.load()
+    #loader = DirectoryLoader(docs_path, loader_kwargs={"glob":"**/*.md"})   
+    #docs_md = loader.load()
     
     
     embeddings = OpenAIEmbeddingsWrapper(model=embedding_model_name)  # type: ignore
