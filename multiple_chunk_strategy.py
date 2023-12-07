@@ -113,19 +113,11 @@ def build_pinecone_index(
     Pinecone.from_documents(documents, embeddings, index_name=index_name, namespace=namespace)
 
 
-def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str, i: int) -> None:
+def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str) -> None:
     """
     Saves a dataframe to parquet - ensures as we loop through combinations of namespaces that the parquet is added to instead of overwritten.
     """
     dataframe.to_parquet(save_path)
-
-    # if i == 0 or not os.path.exists(save_path):
-    #     # On the first iteration or if the file doesn't exist, create a new parquet file
-    #     dataframe.to_parquet(save_path, engine='fastparquet')
-    # else:
-    #     # On subsequent iterations, append the data to the existing parquet file
-    #     dataframe.to_parquet(save_path, engine='fastparquet', append=True)
-
 
 def combine_parquet(out_path: str) -> None:
     """
@@ -133,12 +125,14 @@ def combine_parquet(out_path: str) -> None:
     """
     parq_files= [f for f in os.listdir(out_path) if f.endswith('.pq')]
 
-    combined_df=pd.DataFrame()
+    list_dfs=[]
 
     for file in parq_files:
         file_path=os.path.join(out_path,file)
         df=pd.read_parquet(file_path)
-        combined_df=combined_df.append(df,ignore_index=True)
+        list_dfs.append(df)
+    
+    combined_df=pd.concat(list_dfs, ignore_index=True, sort=False)
 
     combined_df.to_parquet(out_path+"knowledge_db.pq")
 
@@ -232,6 +226,7 @@ if __name__ == "__main__":
     embeddings = OpenAIEmbeddingsWrapper(model=embedding_model_name)  # type: ignore
 
     stat_dict= p_index.describe_index_stats() 
+    print(f"stat dict: {stat_dict}")
     namespace=""
     doc_iter= None
     i = 0
@@ -271,22 +266,13 @@ if __name__ == "__main__":
                     if i == 0:
                         old_df = pd.DataFrame(columns=new_df.columns)
                     
-                    #Print out if new_df is an extension- for testing only
-                    # is_extension = all(new_df[col].isin(old_df[col].unique()).all() for col in old_df.columns)
-                    # if is_extension:
-                    #     print("new_df is an extension of old_df.")
-                    # else:
-                    #     print("new_df is not an extension of old_df.")
-                    
                     first_column=new_df.columns[0]
                     diff_df = new_df.merge(old_df, on=first_column, how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
                     diff_df["namespace"] = namespace
-                    # print(diff_df.head())
-                    # print(diff_df.describe())
                     
                     #Save to parquet file in colab and make old df = new df for next iteration - we will pull things together into one file in the colab and push to gdrive there as well.
                     final_path = output_parquet_path+namespace+".pq"
-                    save_dataframe_to_parquet(diff_df, final_path,i)  
+                    save_dataframe_to_parquet(diff_df, final_path)  
                     old_df = new_df
                     i+=1
         # elif ct == "MarkdownTextSplitter":
