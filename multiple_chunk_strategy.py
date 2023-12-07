@@ -117,7 +117,11 @@ def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str) -> None:
     """
     Saves a dataframe to parquet - ensures as we loop through combinations of namespaces that the parquet is added to instead of overwritten.
     """
-    dataframe.to_parquet(save_path)
+    try:
+        dataframe.to_parquet(save_path, overwrite=True)  # Overwrite existing file
+        print("File saved successfully.")
+    except FileExistsError:
+        print(f"File already exists at '{save_path}'. Use overwrite=True to replace it.")
 
 def combine_parquet(out_path: str) -> None:
     """
@@ -136,6 +140,18 @@ def combine_parquet(out_path: str) -> None:
 
     combined_df.to_parquet(out_path+"knowledge_db.pq")
 
+class ColumnConsistencyChecker:
+    def __init__(self, file_paths):
+        self.file_paths = file_paths
+        self.column_sets = []
+
+    def check_column_consistency(self):
+        for file_path in self.file_paths:
+            df = pd.read_parquet(file_path)
+            self.column_sets.append(set(df.columns))
+
+        # Check if all sets in the list are equal
+        return all(columns == self.column_sets[0] for columns in self.column_sets)
 
 class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
     """
@@ -246,18 +262,16 @@ if __name__ == "__main__":
                     
                     #delete namespace if it already exists
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
-                        print(f"delete occured for {namespace}")
+                        print(f"{namespace} namespace was deleted and replaced")
                         p_index.delete(delete_all=True, namespace=namespace)                
                     else:
-                        print(f"NO delete occured for {namespace}")
+                        print(f"{namespace} namespace did not exist; new one created")
                     
                     #chunk the documents into a list of documents
                     doc_iter = chunk_docs(documents, embedding_model_name, ct, cs, co) 
-                    # print("chunking done")
                                         
                     #Build the pinecone index with the document embeddings dict 
                     build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
-                    # print("pinecone build done")
 
                     #Create df from embeddings
                     new_df = embeddings.document_embedding_dataframe
@@ -308,6 +322,16 @@ if __name__ == "__main__":
         #     old_df = new_df
         #     i+=1        
     print("Total number of namespaces:",i)
+
+    parq_files = [f for f in os.listdir(output_parquet_path) if f.endswith('.pq')]
+    file_paths = [os.path.join(output_parquet_path, file) for file in parq_files]
+    checker = ColumnConsistencyChecker(file_paths)
+
+    if checker.check_column_consistency():
+        print("All Parquet files have the same column names.")
+        combine_parquet(output_parquet_path)
+    else:
+        print("Parquet files have different column names.")
     combine_parquet(output_parquet_path)
     print("knowledge_db.pq created")
 
