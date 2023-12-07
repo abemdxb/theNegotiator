@@ -330,8 +330,8 @@ if __name__ == "__main__":
     if checker.check_column_consistency():
         print("All Parquet files have the same column names.")
         combine_parquet(output_parquet_path)
+        print("knowledge_db.pq created")
     else:
         print("Parquet files have different column names.")
-    combine_parquet(output_parquet_path)
-    print("knowledge_db.pq created")
+    
 
