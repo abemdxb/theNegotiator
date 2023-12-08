@@ -261,6 +261,8 @@ if __name__ == "__main__":
                     print(f"chunking for namespace {i}:{namespace}")
                     
                     #delete namespace if it already exists
+                    nsp_obj=stat_dict["namespaces"]
+                    print(f"list of namespaces:{nsp_obj}")
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
                         print(f"{namespace} namespace was deleted and replaced")
                         p_index.delete(delete_all=True, namespace=namespace)                
@@ -330,7 +332,7 @@ if __name__ == "__main__":
     if checker.check_column_consistency():
         print("All Parquet files have the same column names.")
         combine_parquet(output_parquet_path)
-        print("knowledge_db.pq created")
+        print("knowledge_db.pq built")
     else:
         print("Parquet files have different column names.")
     
