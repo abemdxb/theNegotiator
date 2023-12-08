@@ -117,7 +117,6 @@ def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str) -> None:
     """
     Saves a dataframe to parquet - ensures as we loop through combinations of namespaces that the parquet is added to instead of overwritten.
     """
-    try:
         dataframe.to_parquet(save_path)  # Overwrites existing file
         print("File saved successfully.")
 
