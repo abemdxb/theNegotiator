@@ -194,27 +194,31 @@ class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--pinecone-api-key", type=str, help="Pinecone API key")
-    parser.add_argument("--pinecone-index-name", type=str, help="Pinecone index name")
-    parser.add_argument("--pinecone-environment", type=str, help="Pinecone environment")
-    parser.add_argument("--openai-api-key", type=str, help="OpenAI API key")
-    parser.add_argument(
-        "--output-parquet-path", type=str, help="Path to output parquet file for index"
-    )
-    parser.add_argument("--docs-path", type=str, help="Path to pdf files")
-    parser.add_argument("--chunk-types", type=str, help="chunking_strategy") #json loads
-    parser.add_argument("--chunk-sizes", type=str, help="chunk_sizes") #json loads
-    parser.add_argument("--chunk-overlaps", type=str, help="chunking_overlap") #json loads
-    args = parser.parse_args()
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("--pinecone-api-key", type=str, help="Pinecone API key")
+    # parser.add_argument("--pinecone-index-name", type=str, help="Pinecone index name")
+    # parser.add_argument("--pinecone-environment", type=str, help="Pinecone environment")
+    # parser.add_argument("--openai-api-key", type=str, help="OpenAI API key")
+    # parser.add_argument(
+    #     "--output-parquet-path", type=str, help="Path to output parquet file for index"
+    # )
+    # parser.add_argument("--docs-path", type=str, help="Path to pdf files")
+    # parser.add_argument("--chunk-types", type=str, help="chunking_strategy") #json loads
+    # parser.add_argument("--chunk-sizes", type=str, help="chunk_sizes") #json loads
+    # parser.add_argument("--chunk-overlaps", type=str, help="chunking_overlap") #json loads
+    # args = parser.parse_args()
 
-    pinecone_api_key = args.pinecone_api_key
+    pinecone_api_key = os.getenv("YOUR_PINECONE_API_KEY")
+    print(pinecone_api_key)
+    type(pinecone_api_key)
     pinecone_index_name = args.pinecone_index_name
     pinecone_environment = args.pinecone_environment
     openai_api_key = args.openai_api_key
     output_parquet_path = args.output_parquet_path
     docs_path=args.docs_path
     chunk_types_text=args.chunk_types
+    print(chunk_types_text)
+    type(chunk_types_text)
     chunk_sizes_text=args.chunk_sizes
     chunk_overlaps_text=args.chunk_overlaps
 
