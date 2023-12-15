@@ -111,7 +111,7 @@ def build_pinecone_index(
     """
 
     Pinecone.from_documents(documents, embeddings, index_name=index_name, namespace=namespace)
-    print(f"embeddings post build of pinecone:{embeddings}")
+    #print(f"embeddings post build of pinecone:{embeddings}")
 
 def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str) -> None:
     """
@@ -135,7 +135,7 @@ def combine_parquet(out_path: str) -> None:
     
     combined_df=pd.concat(list_dfs, ignore_index=True, sort=False)
 
-    combined_df.to_parquet(out_path+"knowledge_db.pq")
+    combined_df.to_parquet(out_path+"/"+"knowledge_db.pq")
 
 class ColumnConsistencyChecker:
     def __init__(self, file_paths):
@@ -161,14 +161,14 @@ class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
     def embed_query(self, text: str) -> List[float]:
         embedding = super().embed_query(text)
         self.query_text_to_embedding[text] = embedding
-        print(f"embedding:{embedding}")
+        # print(f"embedding:{embedding}")
         return embedding
 
     def embed_documents(self, texts: List[str], chunk_size: Optional[int] = 0) -> List[List[float]]:
         embeddings = super().embed_documents(texts, chunk_size)
         for text, embedding in zip(texts, embeddings):
             self.document_text_to_embedding[text] = embedding
-        print(f"embeddings2:{embeddings}")
+        # print(f"embeddings2:{embeddings}")
         return embeddings
 
     @property
@@ -183,7 +183,7 @@ class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
     def _convert_text_to_embedding_map_to_dataframe(
         text_to_embedding: Dict[str, List[float]]
     ) -> pd.DataFrame:
-        print("text_to_embedding:", text_to_embedding)
+        # print("text_to_embedding:", text_to_embedding)
         texts, embeddings = map(list, zip(*text_to_embedding.items()))
         embedding_arrays = [np.array(embedding) for embedding in embeddings]
         return pd.DataFrame.from_dict(
@@ -277,9 +277,9 @@ if __name__ == "__main__":
                     #Build the pinecone index with the document embeddings dict 
                     build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
                     
-                    folder_path2 = r"C:\Users\abemd\Documents\Negotiator\theNegotiator\test"
-                    contents = os.listdir(folder_path2)
-                    print(contents)
+                    # folder_path2 = r"C:\Users\abemd\Documents\Negotiator\theNegotiator\test"
+                    # contents = os.listdir(folder_path2)
+                    # print(contents)
 
                     #Create df from embeddings
                     new_df = embeddings.document_embedding_dataframe
@@ -293,7 +293,7 @@ if __name__ == "__main__":
                     diff_df["namespace"] = namespace
                     
                     #Save to parquet file in colab and make old df = new df for next iteration - we will pull things together into one file in the colab and push to gdrive there as well.
-                    final_path = output_parquet_path+namespace+".pq"
+                    final_path = output_parquet_path+"/"+namespace+".pq"
                     save_dataframe_to_parquet(diff_df, final_path)  
                     old_df = new_df
                     i+=1
