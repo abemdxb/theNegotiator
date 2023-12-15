@@ -111,7 +111,7 @@ def build_pinecone_index(
     """
 
     Pinecone.from_documents(documents, embeddings, index_name=index_name, namespace=namespace)
-    print(f"embeddings post build of pinecone:{embeddings}")
+    #print(f"embeddings post build of pinecone:{embeddings}")
 
 def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str) -> None:
     """
@@ -161,14 +161,14 @@ class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
     def embed_query(self, text: str) -> List[float]:
         embedding = super().embed_query(text)
         self.query_text_to_embedding[text] = embedding
-        print(f"embedding:{embedding}")
+        #print(f"embedding:{embedding}")
         return embedding
 
     def embed_documents(self, texts: List[str], chunk_size: Optional[int] = 0) -> List[List[float]]:
         embeddings = super().embed_documents(texts, chunk_size)
         for text, embedding in zip(texts, embeddings):
             self.document_text_to_embedding[text] = embedding
-        print(f"embeddings2:{embeddings}")
+        #print(f"embeddings2:{embeddings}")
         return embeddings
 
     @property
@@ -183,7 +183,7 @@ class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
     def _convert_text_to_embedding_map_to_dataframe(
         text_to_embedding: Dict[str, List[float]]
     ) -> pd.DataFrame:
-        print("text_to_embedding:", text_to_embedding)
+        #print("text_to_embedding:", text_to_embedding)
         texts, embeddings = map(list, zip(*text_to_embedding.items()))
         embedding_arrays = [np.array(embedding) for embedding in embeddings]
         return pd.DataFrame.from_dict(
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     openai_api_key = os.getenv("OPENAI_API_KEY")
     output_parquet_path = os.getenv("OUTPUT_PARQUET_PATH")
     docs_path=os.getenv("DOC_PATH")
-    print(f"docs_path={docs_path}")
+    #print(f"docs_path={docs_path}")
     chunk_types_text=os.getenv("CHUNK_TYPES")
     chunk_sizes_text=os.getenv("CHUNK_SIZES")
     chunk_overlaps_text=os.getenv("CHUNK_OVERLAPS")
@@ -219,15 +219,7 @@ if __name__ == "__main__":
     
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
-    print(f"documents:{documents}")
     
-
-    # lots of errors coming from here
-    #loader = DirectoryLoader(docs_path, loader_kwargs={"glob":"**/*.md"})   
-    #docs_md = loader.load()
-    
-    
-
     stat_dict= p_index.describe_index_stats() 
     print(f"stat dict: {stat_dict}")
     namespace=""
@@ -249,7 +241,6 @@ if __name__ == "__main__":
 
                     #delete namespace if it already exists
                     nsp_obj=stat_dict["namespaces"]
-                    print(f"list of namespaces:{nsp_obj}")
                     if 'namespaces' in stat_dict and namespace in stat_dict['namespaces']:
                         print(f"{namespace} namespace was deleted and replaced")
                         p_index.delete(delete_all=True, namespace=namespace)                
