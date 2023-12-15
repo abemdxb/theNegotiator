@@ -43,7 +43,7 @@ def load_pdf_docs(d_path: str) -> List[Document]:
     """
     Loads documentation from three pdf docs.
     """
-
+    print(f"dpath={d_path}")
     loader = PyPDFDirectoryLoader(d_path)
 
     print("loader = {}".format(loader))
@@ -111,7 +111,7 @@ def build_pinecone_index(
     """
 
     Pinecone.from_documents(documents, embeddings, index_name=index_name, namespace=namespace)
-
+    print(f"embeddings post build of pinecone:{embeddings}")
 
 def save_dataframe_to_parquet(dataframe: pd.DataFrame, save_path: str) -> None:
     """
@@ -161,12 +161,14 @@ class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
     def embed_query(self, text: str) -> List[float]:
         embedding = super().embed_query(text)
         self.query_text_to_embedding[text] = embedding
+        print(f"embedding:{embedding}")
         return embedding
 
     def embed_documents(self, texts: List[str], chunk_size: Optional[int] = 0) -> List[List[float]]:
         embeddings = super().embed_documents(texts, chunk_size)
         for text, embedding in zip(texts, embeddings):
             self.document_text_to_embedding[text] = embedding
+        print(f"embeddings2:{embeddings}")
         return embeddings
 
     @property
@@ -181,6 +183,7 @@ class OpenAIEmbeddingsWrapper(OpenAIEmbeddings):
     def _convert_text_to_embedding_map_to_dataframe(
         text_to_embedding: Dict[str, List[float]]
     ) -> pd.DataFrame:
+        print("text_to_embedding:", text_to_embedding)
         texts, embeddings = map(list, zip(*text_to_embedding.items()))
         embedding_arrays = [np.array(embedding) for embedding in embeddings]
         return pd.DataFrame.from_dict(
@@ -199,7 +202,7 @@ if __name__ == "__main__":
     # parser.add_argument("--pinecone-index-name", type=str, help="Pinecone index name")
     # parser.add_argument("--pinecone-environment", type=str, help="Pinecone environment")
     # parser.add_argument("--openai-api-key", type=str, help="OpenAI API key")
-    # parser.add_argument(
+    # parser.add_argument( ssas
     #     "--output-parquet-path", type=str, help="Path to output parquet file for index"
     # )
     # parser.add_argument("--docs-path", type=str, help="Path to pdf files")
@@ -209,18 +212,15 @@ if __name__ == "__main__":
     # args = parser.parse_args()
 
     pinecone_api_key = os.getenv("YOUR_PINECONE_API_KEY")
-    print(pinecone_api_key)
-    type(pinecone_api_key)
-    pinecone_index_name = args.pinecone_index_name
-    pinecone_environment = args.pinecone_environment
-    openai_api_key = args.openai_api_key
-    output_parquet_path = args.output_parquet_path
-    docs_path=args.docs_path
-    chunk_types_text=args.chunk_types
-    print(chunk_types_text)
-    type(chunk_types_text)
-    chunk_sizes_text=args.chunk_sizes
-    chunk_overlaps_text=args.chunk_overlaps
+    pinecone_index_name = os.getenv("YOUR_PINECONE_INDEX_NAME")
+    pinecone_environment = os.getenv("YOUR_PINECONE_ENVIRONMENT")
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    output_parquet_path = os.getenv("OUTPUT_PARQUET_PATH")
+    docs_path=os.getenv("DOC_PATH")
+    print(f"docs_path={docs_path}")
+    chunk_types_text=os.getenv("CHUNK_TYPES")
+    chunk_sizes_text=os.getenv("CHUNK_SIZES")
+    chunk_overlaps_text=os.getenv("CHUNK_OVERLAPS")
 
     chunk_types = json.loads(chunk_types_text)
     chunk_sizes = json.loads(chunk_sizes_text)
@@ -233,6 +233,7 @@ if __name__ == "__main__":
     
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
+    print(f"documents:{documents}")
     
 
     # lots of errors coming from here
@@ -275,6 +276,10 @@ if __name__ == "__main__":
                                         
                     #Build the pinecone index with the document embeddings dict 
                     build_pinecone_index(doc_iter, embeddings, pinecone_index_name, namespace)
+                    
+                    folder_path2 = r"C:\Users\abemd\Documents\Negotiator\theNegotiator\test"
+                    contents = os.listdir(folder_path2)
+                    print(contents)
 
                     #Create df from embeddings
                     new_df = embeddings.document_embedding_dataframe
@@ -325,7 +330,6 @@ if __name__ == "__main__":
         #     old_df = new_df
         #     i+=1        
     print("Total number of namespaces:",i)
-
     parq_files = [f for f in os.listdir(output_parquet_path) if f.endswith('.pq')]
     file_paths = [os.path.join(output_parquet_path, file) for file in parq_files]
     checker = ColumnConsistencyChecker(file_paths)
