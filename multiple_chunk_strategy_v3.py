@@ -203,7 +203,7 @@ if __name__ == "__main__":
     openai_api_key = os.getenv("OPENAI_API_KEY")
     output_parquet_path = os.getenv("OUTPUT_PARQUET_PATH")
     docs_path=os.getenv("DOC_PATH")
-    #print(f"docs_path={docs_path}")
+    print(f"docs_path={docs_path}")
     chunk_types_text=os.getenv("CHUNK_TYPES")
     chunk_sizes_text=os.getenv("CHUNK_SIZES")
     chunk_overlaps_text=os.getenv("CHUNK_OVERLAPS")
