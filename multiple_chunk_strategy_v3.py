@@ -220,7 +220,22 @@ if __name__ == "__main__":
     embedding_model_name = "text-embedding-ada-002"
     documents = load_pdf_docs(docs_path)
     
-    stat_dict= p_index.describe_index_stats() 
+    import time
+
+    max_retries = 3
+    retry_delay = 5  # seconds
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            stat_dict = p_index.describe_index_stats()
+            print(f"stat dict: {stat_dict}")
+            break  # Break out of the loop if successful
+        except Exception as e:
+            print(f"Attempt {attempt} failed. Retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
+    else:
+        # If all attempts fail, handle the error or raise an exception
+        print("All attempts failed. Exiting.")
     print(f"stat dict: {stat_dict}")
     namespace=""
     doc_iter= None
