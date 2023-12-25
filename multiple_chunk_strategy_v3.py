@@ -125,8 +125,9 @@ def combine_parquet(out_path: str) -> None:
     """
     Combines all parquet files in folder specified. Includes tests for identical columns
     """
-    parq_files= [f for f in os.listdir(out_path) if f.endswith('.pq')]
+    parq_files= [f for f in os.listdir(out_path) if f.endswith('.pq') and f != 'knowledge_db.pq']
     list_dfs=[]
+
 
     for file in parq_files:
         file_path=os.path.join(out_path,file)
